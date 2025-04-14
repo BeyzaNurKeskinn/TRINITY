@@ -29,6 +29,10 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> handleGenericException(Exception ex) {
         return new ResponseEntity<>("Bir hata oluştu: " + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
     }//Beklenmeyen hataları yakalamak için bir güvenlik ağı.
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<String> handleIllegalArgument(IllegalArgumentException ex) {
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);//Base64 doğrulama hatası veya kategori adı çakışması için fırlatılıyor.
+    }
 }
 
 
