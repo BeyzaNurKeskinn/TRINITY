@@ -20,7 +20,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 @Component
-public class JwtAuthorizationFilter extends OncePerRequestFilter {
+public class JwtAuthorizationFilter extends OncePerRequestFilter {//Her istekte JWT’yi doğrular ve kullanıcıyı yetkilendirir.
 
     private static final Logger logger = LoggerFactory.getLogger(JwtAuthorizationFilter.class);
     private final JwtUtil jwtUtil;

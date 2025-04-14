@@ -15,10 +15,10 @@ import java.util.Map;
 import java.util.function.Function;
 
 @Service
-public class JwtUtil {
+public class JwtUtil {//JWT oluşturma, doğrulama ve bilgi çıkarma işlemlerini yapar.
 
     @Value("${jwt.secret}")
-    private String secretKey;
+    private String secretKey;//@Value: application.properties’ten değerleri alır.
 
     @Value("${jwt.expiration}")
     private long jwtExpiration;
@@ -27,16 +27,16 @@ public class JwtUtil {
     private long refreshTokenExpiration;
 
     public String extractUsername(String token) {
-        return extractClaim(token, Claims::getSubject);
+        return extractClaim(token, Claims::getSubject);//Token’ın kime ait olduğunu bulmak için.
     }
 
     public Date extractExpiration(String token) {
-        return extractClaim(token, Claims::getExpiration);
+        return extractClaim(token, Claims::getExpiration);//Geçerlilik kontrolü için.
     }
 
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
         final Claims claims = extractAllClaims(token);
-        return claimsResolver.apply(claims);
+        return claimsResolver.apply(claims);//Esnek claim erişimi için.
     }
 
     private Claims extractAllClaims(String token) {
@@ -45,15 +45,15 @@ public class JwtUtil {
                 .verifyWith(getSignInKey())
                 .build()
                 .parseSignedClaims(token)
-                .getPayload();
+                .getPayload();//Token içeriğini çözümlemek için.
     }
 
     private SecretKey getSignInKey() {
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
-        return Keys.hmacShaKeyFor(keyBytes);
+        return Keys.hmacShaKeyFor(keyBytes);//Gizli anahtarı oluşturur.
     }
 
-    public String generateToken(UserDetails userDetails) {
+    public String generateToken(UserDetails userDetails) {//Varsayılan token oluşturma metodu.
         return generateToken(new HashMap<>(), userDetails);
     }
 
@@ -66,7 +66,7 @@ public class JwtUtil {
                 .expiration(new Date(System.currentTimeMillis() + jwtExpiration))
                 .signWith(getSignInKey())
                 .compact();
-    }
+    }//JWT oluşturur.Kullanıcıya erişim token’ı verir.
 /*
     public String generateRefreshToken(UserDetails userDetails) {
         return Jwts.builder()
@@ -77,7 +77,7 @@ public class JwtUtil {
                 .compact();
     }
 */
-    public boolean isTokenValid(String token, UserDetails userDetails) {
+    public boolean isTokenValid(String token, UserDetails userDetails) {//Token’ın geçerli olup olmadığını kontrol eder.
         final String username = extractUsername(token);
         return (username.equals(userDetails.getUsername())) && !isTokenExpired(token);
     }

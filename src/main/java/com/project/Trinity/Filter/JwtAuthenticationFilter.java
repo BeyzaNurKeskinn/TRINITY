@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
+	//Login isteklerini işler ve başarılı girişte JWT üretir.
 
     private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
     private final JwtUtil jwtUtil;
@@ -57,7 +58,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
             throw new AuthenticationException("Geçersiz istek formatı", e) {};
         }
     }
-
+//Başarılı girişte token’lar üretir.
     @Override
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authResult) throws IOException, ServletException {
         UserDetails userDetails = (UserDetails) authResult.getPrincipal();

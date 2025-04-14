@@ -10,5 +10,5 @@ public class TrinityApplication {
 		SpringApplication.run(TrinityApplication.class, args);
 		System.out.println("TrinityApplication started successfully!");
 	}
-
+//Bu, Spring’in “her şeyi hallet” dediğimiz yerdir.
 }

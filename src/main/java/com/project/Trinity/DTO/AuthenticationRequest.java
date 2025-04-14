@@ -1,7 +1,8 @@
 package com.project.Trinity.DTO;
 
 import jakarta.validation.constraints.NotBlank;
-
+import lombok.Data;
+@Data
 public class AuthenticationRequest {
     @NotBlank(message = "Kullanıcı adı zorunludur")
     private String username;
@@ -9,19 +10,6 @@ public class AuthenticationRequest {
     @NotBlank(message = "Şifre zorunludur")
     private String password;
 
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-}
+}//Login isteği için veri transfer nesnesi (DTO)
+//Neden?: Login verilerini güvenli ve düzenli taşımak için.
+//DTO’lar, istemciyle backend arasında veri taşımak için kullanılır.

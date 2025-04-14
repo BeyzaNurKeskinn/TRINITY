@@ -1,11 +1,13 @@
 package com.project.Trinity.Entity;
 
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
+import lombok.Data;
 
+import java.time.LocalDateTime;
+@Data
 @Entity
 @Table(name = "refresh_token")
-public class RefreshToken {
+public class RefreshToken {//Refresh token’ları veritabanında saklamak için varlık sınıfı.
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,35 +25,7 @@ public class RefreshToken {
     public RefreshToken() {
     }
 
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getToken() {
-        return token;
-    }
-
-    public void setToken(String token) {
-        this.token = token;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
-    }
-
-    public LocalDateTime getExpiryDate() {
-        return expiryDate;
-    }
-
-    public void setExpiryDate(LocalDateTime expiryDate) {
-        this.expiryDate = expiryDate;
-    }
-}
+}/*
+RefreshToken, veritabanında token’ları saklar.
+Refresh token’lar, kullanıcı oturumunu uzun süre devam ettirmek için kullanılır. 
+Veritabanında saklanması, güvenliği artırır.*/

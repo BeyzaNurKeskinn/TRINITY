@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/protected")
 public class ProtectedController {
-
+//Kimlik doğrulaması gereken endpoint’leri sunar (user ve admin).
     private static final Logger logger = LoggerFactory.getLogger(ProtectedController.class);
 
     @GetMapping("/user")

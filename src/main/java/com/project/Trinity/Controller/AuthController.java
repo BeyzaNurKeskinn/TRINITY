@@ -1,6 +1,7 @@
 package com.project.Trinity.Controller;
 
 import com.project.Trinity.Service.RefreshTokenService;
+import com.project.Trinity.DTO.AuthenticationRequest;
 import com.project.Trinity.Service.InvalidRefreshTokenException;
 import com.project.Trinity.Service.UserService;
 import com.project.Trinity.Service.UsernameAlreadyExistsException;
@@ -8,6 +9,7 @@ import com.project.Trinity.Util.JwtUtil;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import lombok.Data;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,7 +28,7 @@ import java.util.Map;
 import jakarta.validation.Valid;
 @RestController
 @RequestMapping("/api/auth")
-public class AuthController {
+public class AuthController {//Kullanıcı kaydı, girişi ve refresh token işlemlerini yöneten REST endpoint’leri.
     private final UserService userService;
     private final RefreshTokenService refreshTokenService;
     private final AuthenticationManager authenticationManager; // Yeni bağımlılık
@@ -53,7 +55,23 @@ public class AuthController {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
     }
-
+    @PostMapping("/login")
+    public ResponseEntity<Map<String, String>> login(@Valid @RequestBody AuthenticationRequest request) {
+        try {
+            Authentication auth = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
+            );
+            UserDetails userDetails = (UserDetails) auth.getPrincipal();
+            String accessToken = jwtUtil.generateToken(userDetails);
+            String refreshToken = refreshTokenService.createRefreshToken(userDetails.getUsername());
+            Map<String, String> tokens = new HashMap<>();
+            tokens.put("accessToken", accessToken);
+            tokens.put("refreshToken", refreshToken);
+            return ResponseEntity.ok(tokens);
+        } catch (AuthenticationException e) {
+            return new ResponseEntity<>(Map.of("error", "Kimlik doğrulama başarısız"), HttpStatus.UNAUTHORIZED);
+        }
+    }
   
 
     @PostMapping("/refresh-token")
@@ -69,8 +87,9 @@ public class AuthController {
         }
     }
 }
-
+//AuthController, kullanıcıyla ilgili temel işlemleri (kayıt, giriş, token yenileme) yönetir. REST API’nin yüzü gibidir.
 // DTO Classes
+@Data
 class RegisterRequest {
 	@NotBlank(message = "Kullanıcı adı zorunludur")
     @Size(min = 3, max = 20, message = "Kullanıcı adı 3-20 karakter olmalı")
@@ -80,10 +99,6 @@ class RegisterRequest {
     @Size(min = 8, message = "Şifre en az 8 karakter olmalı")
     private String password;
 
-    public String getUsername() { return username; }
-    public void setUsername(String username) { this.username = username; }
-    public String getPassword() { return password; }
-    public void setPassword(String password) { this.password = password; }
 }
 
 class RefreshTokenRequest {

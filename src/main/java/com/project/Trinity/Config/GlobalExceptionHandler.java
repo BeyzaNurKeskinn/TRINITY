@@ -14,19 +14,23 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(UsernameAlreadyExistsException.class)
 	public ResponseEntity<String> handleUsernameAlreadyExists(UsernameAlreadyExistsException ex) {
 	    return new ResponseEntity<>(ex.getMessage(), HttpStatus.CONFLICT);
-	}
+	}//Kullanıcı kaydolurken aynı kullanıcı adını seçerse, istemciye anlaşılır bir hata mesajı göstermek için.
 
 	@ExceptionHandler(InvalidRefreshTokenException.class)
 	public ResponseEntity<String> handleInvalidRefreshToken(InvalidRefreshTokenException ex) {
 	    return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
-	}
+	}//Refresh token ile yeni bir access token alınmaya çalışıldığında hata olursa, istemciye neden başarısız olduğunu bildirir.
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<String> handleAccessDenied(AccessDeniedException ex) {
         return new ResponseEntity<>("Erişim reddedildi", HttpStatus.FORBIDDEN);
-    }
+    }//Güvenlik açısından, yetkisiz erişimlerde istemciye net bir mesaj verir.
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<String> handleGenericException(Exception ex) {
         return new ResponseEntity<>("Bir hata oluştu: " + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-    }
+    }//Beklenmeyen hataları yakalamak için bir güvenlik ağı.
 }
+
+
+//buranın amacı uygulamada oluşan hataları (exception’ları) yakalayıp istemciye düzgün yanıtlar döndürmek.
+//REST API’lerde hata yönetimi için kullanılır.

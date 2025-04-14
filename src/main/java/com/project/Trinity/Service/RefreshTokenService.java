@@ -5,6 +5,9 @@ import com.project.Trinity.Entity.User;
 
 import com.project.Trinity.Repository.UserRepository;
 import com.project.Trinity.Util.JwtUtil;
+
+import jakarta.transaction.Transactional;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -17,7 +20,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Service
-public class RefreshTokenService {
+public class RefreshTokenService {//Refresh token oluşturma, doğrulama ve temizleme işlemlerini yönetir.
 
     private static final Logger logger = LoggerFactory.getLogger(RefreshTokenService.class);
     private final RefreshTokenRepository refreshTokenRepository;
@@ -66,8 +69,8 @@ public class RefreshTokenService {
                 .map(RefreshToken::getUser)
                 .map(user -> jwtUtil.generateToken(user))
                 .orElseThrow(() -> new InvalidRefreshTokenException("Geçersiz veya süresi dolmuş yenileme token'ı"));
-    }
-
+    }//@Transactional: Veritabanı işlemini güvenli yapar.
+    @Transactional
     @Scheduled(cron = "0 0 2 * * ?") // Her gün 02:00’de
     public void cleanExpiredTokens() {
         refreshTokenRepository.deleteByExpiryDateBefore(LocalDateTime.now());
