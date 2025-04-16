@@ -2,8 +2,7 @@ package com.project.Trinity.Entity;
 
 public enum Status {
     ACTIVE("AKTİF"),
-    DELETED("SİLİNDİ"),
-    PASSIVE("PASİF");
+    INACTIVE("PASİF");
 
     private final String displayName;
 
