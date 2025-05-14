@@ -1,3 +1,4 @@
+
 package com.project.Trinity.Entity;
 
 import jakarta.persistence.*;
@@ -28,4 +29,4 @@ public class RefreshToken {//Refresh token’ları veritabanında saklamak için
 }/*
 RefreshToken, veritabanında token’ları saklar.
 Refresh token’lar, kullanıcı oturumunu uzun süre devam ettirmek için kullanılır. 
-Veritabanında saklanması, güvenliği artırır.*/
+*/

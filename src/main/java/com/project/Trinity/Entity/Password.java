@@ -1,3 +1,4 @@
+
 package com.project.Trinity.Entity;
 
 import jakarta.persistence.*;
@@ -41,5 +42,4 @@ public class Password {
         BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
         this.password = encoder.encode(rawPassword);
     }
-
 }

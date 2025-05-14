@@ -1,3 +1,4 @@
+
 package com.project.Trinity.Repository;
 
 import com.project.Trinity.Entity.User;
@@ -12,4 +13,3 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);
     Optional<User> findByPhone(String phone);
 }//Kullanıcılar için veritabanı işlemlerini sağlar.
-//Neden?: Kimlik doğrulama için kullanıcıyı bulur.

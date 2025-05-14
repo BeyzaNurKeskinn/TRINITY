@@ -1,3 +1,4 @@
+
 package com.project.Trinity.Entity;
 
 import jakarta.persistence.*;
@@ -24,6 +25,4 @@ public class Category {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Status status;
-
-
 }

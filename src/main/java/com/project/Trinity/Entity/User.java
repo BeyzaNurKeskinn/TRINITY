@@ -1,3 +1,4 @@
+
 package com.project.Trinity.Entity;
 
 import jakarta.persistence.*;

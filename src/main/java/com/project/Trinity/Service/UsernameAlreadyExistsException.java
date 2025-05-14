@@ -1,3 +1,4 @@
+
 package com.project.Trinity.Service;
 
 public class UsernameAlreadyExistsException extends RuntimeException {

@@ -1,3 +1,4 @@
+
 package com.project.Trinity.Entity;
 
 public enum Status {

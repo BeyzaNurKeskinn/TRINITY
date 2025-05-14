@@ -1,3 +1,4 @@
+
 package com.project.Trinity.DTO;
 
 import jakarta.validation.constraints.NotBlank;
@@ -12,4 +13,3 @@ public class AuthenticationRequest {
 
 }//Login isteği için veri transfer nesnesi (DTO)
 //Neden?: Login verilerini güvenli ve düzenli taşımak için.
-//DTO’lar, istemciyle backend arasında veri taşımak için kullanılır.

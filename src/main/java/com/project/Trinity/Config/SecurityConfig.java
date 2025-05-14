@@ -1,3 +1,4 @@
+
 package com.project.Trinity.Config;
 
 import com.project.Trinity.Filter.JwtAuthenticationFilter;
@@ -96,11 +97,4 @@ public class SecurityConfig {
         return source;
     }
 }
-
-/**
- * Spring Security’yi yapılandırır. Kimlik doğrulama, yetkilendirme, JWT filtreleri ve CORS ayarlarını tanımlar.
- * Bu dosya, uygulamanın güvenlik kalesi. Kimlik doğrulama (login), yetkilendirme (roller),
- *  JWT filtreleri ve CORS gibi her şeyi yapılandırıyor.
- * 
- * */
  

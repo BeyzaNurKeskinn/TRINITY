@@ -1,3 +1,4 @@
+
 package com.project.Trinity.Config;
 
 import org.springframework.context.annotation.Bean;
@@ -13,10 +14,3 @@ public class PasswordEncoderConfig {
         return new BCryptPasswordEncoder();
     }
 }
-//Dosyanın Amacı: Şifreleri güvenli bir şekilde şifrelemek için PasswordEncoder’ı yapılandırır.
-/*
- * Neden?: Kullanıcı şifrelerini düz metin olarak saklamak güvenlik açığıdır. 
- * BCrypt, güçlü ve güvenli bir şifreleme sağlar.
- * Bu dosya, şifrelerin güvenli saklanması için gerekli. Spring Security ile çalışırken, 
- * şifreleri şifrelemek ve doğrulamak için PasswordEncoder kullanıyoruz
- */
