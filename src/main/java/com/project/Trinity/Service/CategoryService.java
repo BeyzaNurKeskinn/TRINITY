@@ -22,31 +22,27 @@ public class CategoryService {
     }
 
     @Transactional
-    public Category createCategory(String name, String logo, Status status) {
-        // Aynı isimde kategori var mı kontrol et
+    public Category createCategory(String name, String description, String logo, Status status) {
         Optional<Category> existingCategory = categoryRepository.findByName(name);
         if (existingCategory.isPresent()) {
             throw new IllegalArgumentException("Bu kategori adı zaten mevcut: " + name);
         }
 
-        // Logo’yu doğrula (opsiyonel ek kontrol)
         if (logo != null && !logo.isBlank()) {
             try {
-                // Base64’ü decode et, geçerli mi kontrol et
-                Base64.getDecoder().decode(logo.split(",")[1]); // "data:image/...;base64," kısmını atla
+                Base64.getDecoder().decode(logo.split(",")[1]);
             } catch (IllegalArgumentException e) {
                 throw new IllegalArgumentException("Geçersiz Base64 formatı: " + e.getMessage());
             }
         }
 
-        // Mevcut kullanıcıyı al (admin)
         User admin = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
         Category category = new Category();
         category.setName(name);
+        category.setDescription(description); // description eklendi
         category.setLogo(logo);
         category.setStatus(status);
-       
 
         return categoryRepository.save(category);
     }
@@ -62,17 +58,15 @@ public class CategoryService {
     }
 
     @Transactional
-    public Category updateCategory(Long id, String name, String logo, Status status) {
+    public Category updateCategory(Long id, String name, String description, String logo, Status status) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Kategori bulunamadı: " + id));
 
-        // Aynı isimde başka bir kategori var mı kontrol et
         Optional<Category> existingCategory = categoryRepository.findByName(name);
         if (existingCategory.isPresent() && !existingCategory.get().getId().equals(id)) {
             throw new IllegalArgumentException("Bu kategori adı zaten mevcut: " + name);
         }
 
-        // Logo’yu doğrula (opsiyonel ek kontrol)
         if (logo != null && !logo.isBlank()) {
             try {
                 Base64.getDecoder().decode(logo.split(",")[1]);
@@ -82,6 +76,7 @@ public class CategoryService {
         }
 
         category.setName(name);
+        category.setDescription(description); // description eklendi
         category.setLogo(logo);
         category.setStatus(status);
 

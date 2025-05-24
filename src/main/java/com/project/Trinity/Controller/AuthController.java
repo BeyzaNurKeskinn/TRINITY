@@ -98,30 +98,28 @@ public class AuthController {//Kullanıcı kaydı, girişi ve refresh token işl
     public ResponseEntity<?> forgotPassword(@RequestBody ForgotPasswordRequest request) {
         try {
             userService.sendResetLink(request.getEmailOrPhone());
-            return ResponseEntity.ok("Reset link sent to your email or phone.");
+            return ResponseEntity.ok("Sıfırlama kodu e-postanıza veya telefonunuza gönderildi.");
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("No account found with this email or phone. Contact support at support@trinity.com");
+                    .body("Bu e-posta veya telefon numarası kayıtlı değil. Destek için support@trinity.com ile iletişime geçin.");
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("E-posta gönderimi başarısız: " + e.getMessage());
         }
     }
-    @PostMapping("/google-login")
-    public ResponseEntity<?> googleLogin(@RequestBody Map<String, String> request) {
-        String credential = request.get("credential");
-        // Google token doğrulama ve kullanıcı oluşturma mantığı
-        System.out.println("Google login with credential: " + credential);
-        return ResponseEntity.ok("Google login success");
-    }
 
-    @PostMapping("/facebook-login")
-    public ResponseEntity<?> facebookLogin(@RequestBody Map<String, String> request) {
-        String accessToken = request.get("accessToken");
-        // Facebook token doğrulama ve kullanıcı oluşturma mantığı
-        System.out.println("Facebook login with accessToken: " + accessToken);
-        return ResponseEntity.ok("Facebook login success");
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        try {
+            userService.resetPassword(request.getToken(), request.getNewPassword());
+            return ResponseEntity.ok("Şifre başarıyla sıfırlandı.");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
     }
 }
 //AuthController, kullanıcıyla ilgili temel işlemleri (kayıt, giriş, token yenileme) yönetir. REST API’nin yüzü gibidir.
-// DTO Classes
+// DTO Classes 
 @Data
 class RegisterRequest {
 	@NotBlank(message = "Kullanıcı adı zorunludur")
@@ -152,6 +150,15 @@ class RefreshTokenRequest {
 
     public String getRefreshToken() { return refreshToken; }
     public void setRefreshToken(String refreshToken) { this.refreshToken = refreshToken; }
+}
+@Data
+class ResetPasswordRequest {
+    @NotBlank(message = "Sıfırlama kodu zorunludur")
+    private String token;
+
+    @NotBlank(message = "Yeni şifre zorunludur")
+    @Size(min = 8, message = "Yeni şifre en az 8 karakter olmalı")
+    private String newPassword;
 }
 @Data
 class AuthenticationRequest {

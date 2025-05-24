@@ -14,6 +14,7 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long
     Optional<RefreshToken> findByToken(String token);
     Optional<RefreshToken> findByUser(User user);
     void deleteByUser(User user);
+    void deleteByUserId(Long id);
     void deleteByExpiryDateBefore(LocalDateTime date);
 }//Refresh token’lar için veritabanı işlemlerini sağlar.Veritabanı işlemlerini kolaylaştırır.
 

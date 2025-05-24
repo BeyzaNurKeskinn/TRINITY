@@ -7,7 +7,7 @@ import lombok.Data;
 
 
 @Entity
-@Table(name = "category")
+@Table(name = "categories")
 @Data
 public class Category {
 
@@ -21,8 +21,11 @@ public class Category {
 
     @Column(columnDefinition = "TEXT")
     private String logo; // Base64 string olarak saklanacak
+    
+    @Column(length = 500)
+    private String description;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private Status status;
+    @Column(nullable = false, columnDefinition = "VARCHAR(20) DEFAULT 'ACTIVE'")
+    private Status status = Status.ACTIVE;
 }

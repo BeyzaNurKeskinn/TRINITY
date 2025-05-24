@@ -74,6 +74,10 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")
                         .requestMatchers("/api/protected/admin").hasAuthority("ROLE_ADMIN")
                         .requestMatchers("/api/protected/user").authenticated()
+                        .requestMatchers("/api/user/me").authenticated() // /api/user/me için authenticated yeterli
+                        .requestMatchers("/api/user/**").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN") // /api/user/** için USER veya ADMIN
+                        .requestMatchers("/api/protected/user").authenticated()
+                        // Diğer tüm istekler için kimlik doğrulama gerekli
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())
