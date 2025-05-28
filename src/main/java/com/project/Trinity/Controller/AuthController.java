@@ -2,8 +2,11 @@
 package com.project.Trinity.Controller;
 
 import com.project.Trinity.Service.RefreshTokenService;
-
+import com.project.Trinity.Entity.PasswordResetToken;
+import com.project.Trinity.Entity.User;
+import com.project.Trinity.Repository.PasswordResetTokenRepository;
 import com.project.Trinity.Repository.UserRepository;
+import com.project.Trinity.Service.EmailService;
 import com.project.Trinity.Service.InvalidRefreshTokenException;
 import com.project.Trinity.Service.UserService;
 import com.project.Trinity.Service.UsernameAlreadyExistsException;
@@ -20,13 +23,17 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
+
 import jakarta.validation.Valid;
 @RestController
 @RequestMapping("/api/auth")
@@ -36,14 +43,19 @@ public class AuthController {//Kullanıcı kaydı, girişi ve refresh token işl
     private final AuthenticationManager authenticationManager; // Yeni bağımlılık
     private final JwtUtil jwtUtil; // Yeni bağımlılık
     private final UserRepository userRepository;
+    private final PasswordResetTokenRepository tokenRepository;
+    private final EmailService emailService;
 
     public AuthController(UserService userService, RefreshTokenService refreshTokenService,
-                          AuthenticationManager authenticationManager, JwtUtil jwtUtil,UserRepository userRepository) {
+                          AuthenticationManager authenticationManager, JwtUtil jwtUtil,UserRepository userRepository, PasswordResetTokenRepository tokenRepository,
+                          EmailService emailService) {
         this.userService = userService;
         this.refreshTokenService = refreshTokenService;
         this.authenticationManager = authenticationManager;
         this.jwtUtil = jwtUtil;
         this.userRepository = userRepository;
+        this.tokenRepository = tokenRepository;
+        this.emailService = emailService;
     }
 
     @PostMapping("/register")
@@ -117,6 +129,39 @@ public class AuthController {//Kullanıcı kaydı, girişi ve refresh token işl
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
+    @PostMapping("/user/send-verification-code")
+    public ResponseEntity<?> sendVerificationCode(Authentication authentication) {
+        try {
+            String username = authentication.getName();
+            User user = userRepository.findByUsername(username)
+                    .orElseThrow(() -> new UsernameNotFoundException("Kullanıcı bulunamadı: " + username));
+            String code = String.format("%06d", new Random().nextInt(999999));
+            LocalDateTime expiryDate = LocalDateTime.now().plusMinutes(15);
+            PasswordResetToken token = new PasswordResetToken(code, user, expiryDate);
+            tokenRepository.save(token);
+            emailService.sendResetCodeEmail(user.getEmail(), code);
+            return ResponseEntity.ok("Doğrulama kodu gönderildi.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Doğrulama kodu gönderimi başarısız: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/user/verify-code")
+    public ResponseEntity<?> verifyCode(@RequestBody VerifyCodeRequest request) {
+        try {
+            PasswordResetToken resetToken = tokenRepository.findByToken(request.getCode())
+                    .orElseThrow(() -> new IllegalArgumentException("Geçersiz doğrulama kodu"));
+            if (resetToken.isExpired()) {
+                throw new IllegalArgumentException("Doğrulama kodu süresi dolmuş");
+            }
+            tokenRepository.delete(resetToken);
+            return ResponseEntity.ok("Doğrulama başarılı.");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
+
 }
 //AuthController, kullanıcıyla ilgili temel işlemleri (kayıt, giriş, token yenileme) yönetir. REST API’nin yüzü gibidir.
 // DTO Classes 
@@ -138,6 +183,11 @@ class RegisterRequest {
     @Size(min = 10, max = 15, message = "Telefon numarası 10-15 karakter olmalı")
     private String phone;
 
+}
+@Data
+class VerifyCodeRequest {
+    @NotBlank(message = "Doğrulama kodu zorunludur")
+    private String code;
 }
 @Data
 class ForgotPasswordRequest {

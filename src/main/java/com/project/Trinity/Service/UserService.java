@@ -3,10 +3,14 @@ package com.project.Trinity.Service;
 import com.project.Trinity.Entity.PasswordResetToken;
 import com.project.Trinity.Entity.Role;
 import com.project.Trinity.Entity.User;
+import com.project.Trinity.Entity.AuditLog;
+import com.project.Trinity.Entity.Status;
 import com.project.Trinity.Repository.PasswordResetTokenRepository;
 import com.project.Trinity.Repository.RefreshTokenRepository;
 import com.project.Trinity.Repository.UserRepository;
+import com.project.Trinity.Repository.AuditLogRepository;
 import com.project.Trinity.DTO.UserResponse;
+import com.project.Trinity.Service.PasswordService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 
@@ -16,10 +20,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
@@ -31,21 +37,50 @@ public class UserService implements UserDetailsService {
     private final PasswordEncoder passwordEncoder;
     private final PasswordResetTokenRepository tokenRepository;
     private final EmailService emailService;
+    private final PasswordService passwordService;
+    private final AuditLogRepository auditLogRepository;
 
     @Autowired
     private RefreshTokenRepository refreshTokenRepository;
 
-    public UserService(UserRepository userRepository, PasswordResetTokenRepository tokenRepository,PasswordEncoder passwordEncoder,EmailService emailService) {
+    public UserService(
+            UserRepository userRepository,
+            PasswordResetTokenRepository tokenRepository,
+            PasswordEncoder passwordEncoder,
+            EmailService emailService,
+            PasswordService passwordService,
+            AuditLogRepository auditLogRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.emailService = emailService;
         this.tokenRepository = tokenRepository;
+        this.passwordService = passwordService;
+        this.auditLogRepository = auditLogRepository;
     }
 
     @Override
+    @Transactional
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        return userRepository.findByUsername(username)
+        User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Kullanıcı bulunamadı: " + username));
+
+        // Hesap INACTIVE ve frozenAt 30 günden eski değilse, aktif hale getir
+        if (user.getStatus() == Status.INACTIVE && user.getFrozenAt() != null) {
+            long daysFrozen = ChronoUnit.DAYS.between(user.getFrozenAt(), LocalDateTime.now());
+            if (daysFrozen < 30) {
+                user.setStatus(Status.ACTIVE);
+                user.setFrozenAt(null); // Dondurma zamanını sıfırla
+                userRepository.save(user);
+
+                // Denetim kaydı ekle
+                AuditLog auditLog = new AuditLog();
+                auditLog.setAction("Hesap aktif hale getirildi: " + username);
+                auditLog.setTimestamp(LocalDateTime.now());
+                auditLogRepository.save(auditLog);
+            }
+        }
+
+        return user;
     }
 
     @Transactional
@@ -66,21 +101,37 @@ public class UserService implements UserDetailsService {
         newUser.setPhone(phone);
         newUser.setRole(Role.USER);
         User savedUser = userRepository.save(newUser);
+
+        AuditLog auditLog = new AuditLog();
+        auditLog.setAction("Kullanıcı eklendi: " + username);
+        auditLog.setTimestamp(LocalDateTime.now());
+        auditLogRepository.save(auditLog);
+
         return new UserResponse(savedUser.getId(), savedUser.getUsername(), savedUser.getEmail(), savedUser.getPhone());
     }
 
-    @Transactional
-    public UserResponse updateUser(Long id, String username, String password, String email, String phone) {
+    public UserResponse updateUser(Long id, String newUsername, String password, String email, String phone, String status, String role) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Kullanıcı bulunamadı: " + id));
-        user.setUsername(username);
-        // Şifreyi sadece anlamlı bir değer (boş string veya null değil) olduğunda güncelle
+                .orElseThrow(() -> new UsernameNotFoundException("Kullanıcı bulunamadı: " + id));
+        user.setUsername(newUsername);
         if (password != null && !password.trim().isEmpty() && password.length() > 0) {
             user.setPassword(passwordEncoder.encode(password));
         }
         user.setEmail(email);
         user.setPhone(phone);
+        if (status != null) {
+            user.setStatus(Status.valueOf(status));
+        }
+        if (role != null) {
+            user.setRole(Role.valueOf(role));
+        }
         User updatedUser = userRepository.save(user);
+
+        AuditLog auditLog = new AuditLog();
+        auditLog.setAction("Kullanıcı güncellendi: " + newUsername);
+        auditLog.setTimestamp(LocalDateTime.now());
+        auditLogRepository.save(auditLog);
+
         return new UserResponse(updatedUser.getId(), updatedUser.getUsername(), updatedUser.getEmail(), updatedUser.getPhone());
     }
 
@@ -95,9 +146,40 @@ public class UserService implements UserDetailsService {
 
     @Transactional
     public void deleteUser(Long id) {
-    	refreshTokenRepository.deleteByUserId(id);
-        // Sonra kullanıcıyı sil
+        refreshTokenRepository.deleteByUserId(id);
         userRepository.deleteById(id);
+
+        AuditLog auditLog = new AuditLog();
+        auditLog.setAction("Kullanıcı silindi: ID " + id);
+        auditLog.setTimestamp(LocalDateTime.now());
+        auditLogRepository.save(auditLog);
+    }
+
+    @Transactional
+    public void uploadProfilePicture(String username, byte[] imageData) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("Kullanıcı bulunamadı: " + username));
+        user.setProfilePicture(imageData);
+        userRepository.save(user);
+
+        AuditLog auditLog = new AuditLog();
+        auditLog.setAction("Profil resmi güncellendi: " + username);
+        auditLog.setTimestamp(LocalDateTime.now());
+        auditLogRepository.save(auditLog);
+    }
+
+    @Transactional
+    public void freezeAccount(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("Kullanıcı bulunamadı: " + username));
+        user.setStatus(Status.INACTIVE); // FROZEN yerine INACTIVE kullanıyoruz
+        user.setFrozenAt(LocalDateTime.now());
+        userRepository.save(user);
+
+        AuditLog auditLog = new AuditLog();
+        auditLog.setAction("Hesap donduruldu: " + username);
+        auditLog.setTimestamp(LocalDateTime.now());
+        auditLogRepository.save(auditLog);
     }
 
     public void sendResetLink(String emailOrPhone) {
@@ -105,7 +187,6 @@ public class UserService implements UserDetailsService {
                 .orElseGet(() -> userRepository.findByPhone(emailOrPhone)
                         .orElseThrow(() -> new IllegalArgumentException("No account found with this email or phone")));
 
-        // 6 haneli rastgele kod oluştur
         String resetCode = String.format("%06d", new Random().nextInt(999999));
         LocalDateTime expiryDate = LocalDateTime.now().plusMinutes(15);
 
@@ -135,11 +216,42 @@ public class UserService implements UserDetailsService {
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
 
-        // Token'ı geçersiz kıl
+        AuditLog auditLog = new AuditLog();
+        auditLog.setAction("Şifre sıfırlandı: " + user.getUsername());
+        auditLog.setTimestamp(LocalDateTime.now());
+        auditLogRepository.save(auditLog);
+
         tokenRepository.delete(resetToken);
     }
 
     private UserResponse toUserResponse(User user) {
         return new UserResponse(user.getId(), user.getUsername(), user.getEmail(), user.getPhone());
+    }
+
+    public String getCurrentAdminUsername() {
+        return SecurityContextHolder.getContext().getAuthentication().getName();
+    }
+
+    public long getTotalPasswordCount() {
+        return passwordService.countPasswords();
+    }
+
+    public long getTotalUserCount() {
+        return userRepository.count();
+    }
+
+    public List<String> getRecentActions() {
+        return auditLogRepository.findTop10ByOrderByTimestampDesc()
+                .stream()
+                .map(AuditLog::getAction)
+                .collect(Collectors.toList());
+    }
+ // Sık görüntülenen şifreleri döndür
+    public List<String> getMostViewedPasswords(String username) {
+        // Gerçek implementasyonda veritabanından en çok görüntülenen şifreleri al
+        return List.of("Şifre1", "Şifre2", "Şifre3");
+    }
+    public List<String> getFeaturedPasswords(String username) {
+        return List.of("Şifre1", "Şifre2");
     }
 }

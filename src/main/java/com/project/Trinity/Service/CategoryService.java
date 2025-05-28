@@ -8,7 +8,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Base64;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -22,26 +22,20 @@ public class CategoryService {
     }
 
     @Transactional
-    public Category createCategory(String name, String description, String logo, Status status) {
+    public Category createCategory(String name, String description, Status status) {
         Optional<Category> existingCategory = categoryRepository.findByName(name);
         if (existingCategory.isPresent()) {
             throw new IllegalArgumentException("Bu kategori adı zaten mevcut: " + name);
         }
 
-        if (logo != null && !logo.isBlank()) {
-            try {
-                Base64.getDecoder().decode(logo.split(",")[1]);
-            } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("Geçersiz Base64 formatı: " + e.getMessage());
-            }
-        }
+      
 
         User admin = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
         Category category = new Category();
         category.setName(name);
         category.setDescription(description); // description eklendi
-        category.setLogo(logo);
+
         category.setStatus(status);
 
         return categoryRepository.save(category);
@@ -58,7 +52,7 @@ public class CategoryService {
     }
 
     @Transactional
-    public Category updateCategory(Long id, String name, String description, String logo, Status status) {
+    public Category updateCategory(Long id, String name, String description, Status status) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Kategori bulunamadı: " + id));
 
@@ -67,17 +61,10 @@ public class CategoryService {
             throw new IllegalArgumentException("Bu kategori adı zaten mevcut: " + name);
         }
 
-        if (logo != null && !logo.isBlank()) {
-            try {
-                Base64.getDecoder().decode(logo.split(",")[1]);
-            } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("Geçersiz Base64 formatı: " + e.getMessage());
-            }
-        }
-
+     
         category.setName(name);
         category.setDescription(description); // description eklendi
-        category.setLogo(logo);
+
         category.setStatus(status);
 
         return categoryRepository.save(category);
@@ -87,6 +74,7 @@ public class CategoryService {
     public void deleteCategory(Long id) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Kategori bulunamadı: " + id));
-        categoryRepository.delete(category);
+        category.setStatus(Status.INACTIVE); // Silme yerine pasifleştirme
+        categoryRepository.save(category);
     }
 }

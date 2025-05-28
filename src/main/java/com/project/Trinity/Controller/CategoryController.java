@@ -29,50 +29,47 @@ public class CategoryController {
     }
 
     // Admin için kategori işlemleri
-    @RequestMapping("/admin/categories")
+    @PostMapping("/admin/categories")
     @PreAuthorize("hasRole('ADMIN')")
-    public class AdminCategoryController {
+    public ResponseEntity<Category> createCategory(@Valid @RequestBody CategoryRequest request) {
+        Category category = categoryService.createCategory(
+                request.getName(),
+                request.getDescription(),
+                Status.valueOf(request.getStatus())
+        );
+        return new ResponseEntity<>(category, HttpStatus.CREATED);
+    }
 
-        @PostMapping
-        public ResponseEntity<Category> createCategory(@Valid @RequestBody CategoryRequest request) {
-            Category category = categoryService.createCategory(
-                    request.getName(),
-                    request.getDescription(),
-                    request.getLogo(),
-                    Status.valueOf(request.getStatus())
-            );
-            return new ResponseEntity<>(category, HttpStatus.CREATED);
-        }
+    @GetMapping("/admin/categories")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<Category>> getAllCategories() {
+        return ResponseEntity.ok(categoryService.getAllCategories());
+    }
 
-        @GetMapping
-        public ResponseEntity<List<Category>> getAllCategories() {
-            return ResponseEntity.ok(categoryService.getAllCategories());
-        }
+    @PutMapping("/admin/categories/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Category> updateCategory(@PathVariable Long id, @Valid @RequestBody CategoryRequest request) {
+        Category updatedCategory = categoryService.updateCategory(
+                id,
+                request.getName(),
+                request.getDescription(),
+                Status.valueOf(request.getStatus())
+        );
+        return ResponseEntity.ok(updatedCategory);
+    }
 
-        @PutMapping("/{id}")
-        public ResponseEntity<Category> updateCategory(@PathVariable Long id, @Valid @RequestBody CategoryRequest request) {
-            Category updatedCategory = categoryService.updateCategory(
-                    id,
-                    request.getName(),
-                    request.getDescription(),
-                    request.getLogo(),
-                    Status.valueOf(request.getStatus())
-            );
-            return ResponseEntity.ok(updatedCategory);
-        }
-
-        @DeleteMapping("/{id}")
-        public ResponseEntity<Void> deleteCategory(@PathVariable Long id) {
-            categoryService.deleteCategory(id);
-            return ResponseEntity.noContent().build();
-        }
+    @DeleteMapping("/admin/categories/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> deleteCategory(@PathVariable Long id) {
+        categoryService.deleteCategory(id);
+        return ResponseEntity.noContent().build();
     }
 
     // Normal kullanıcılar için kategorileri döndüren endpoint
     @GetMapping("/user/categories")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public ResponseEntity<List<CategoryDTO>> getUserCategories() {
-        List<Category> categories = categoryRepository.findByStatus(Status.ACTIVE); // Sadece ACTIVE kategoriler
+        List<Category> categories = categoryRepository.findByStatus(Status.ACTIVE);
         List<CategoryDTO> categoryDTOs = categories.stream()
                 .map(category -> new CategoryDTO(category.getId(), category.getName()))
                 .collect(Collectors.toList());
@@ -99,12 +96,6 @@ class CategoryRequest {
 
     @jakarta.validation.constraints.Size(max = 500, message = "Açıklama 500 karakterden uzun olamaz")
     private String description;
-
-    @jakarta.validation.constraints.Pattern(
-            regexp = "^$|^data:image/(png|jpeg|jpg|gif);base64,[A-Za-z0-9+/=]+$",
-            message = "Geçerli bir Base64 görüntü formatı giriniz (png, jpeg, jpg, gif desteklenir)"
-    )
-    private String logo;
 
     @jakarta.validation.constraints.Pattern(
             regexp = "ACTIVE|INACTIVE",

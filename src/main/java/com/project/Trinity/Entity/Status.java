@@ -3,6 +3,7 @@ package com.project.Trinity.Entity;
 
 public enum Status {
     ACTIVE("AKTİF"),
+    FROZEN("DONDU"),
     INACTIVE("PASİF");
 
     private final String displayName;

@@ -1,4 +1,3 @@
-
 package com.project.Trinity.Entity;
 
 import jakarta.persistence.*;
@@ -7,8 +6,7 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-
-
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Entity
 @Table(name = "passwords")
@@ -44,15 +42,19 @@ public class Password {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, columnDefinition = "VARCHAR(20) DEFAULT 'ACTIVE'")
-    private Status status = Status.ACTIVE; // Varsayılan değer
+    private Status status = Status.ACTIVE;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by", nullable = false)
     private User createdBy;
     
-//    // Şifreyi bcrypt ile şifreleme
-//    public void setPassword(String rawPassword) {
-//        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-//        this.password = encoder.encode(rawPassword);
-//    }
+    // Şifreyi bcrypt ile şifreleme
+    public void setPassword(String rawPassword, PasswordEncoder passwordEncoder) {
+        this.password = passwordEncoder.encode(rawPassword);
+    }
+
+    // Şifreyi almak için (gerekirse)
+    public String getPassword() {
+        return this.password;
+    }
 }

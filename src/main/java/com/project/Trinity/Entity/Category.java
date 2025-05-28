@@ -17,10 +17,6 @@ public class Category {
 
     @Column(nullable = false, length = 255)
     private String name;
-
-
-    @Column(columnDefinition = "TEXT")
-    private String logo; // Base64 string olarak saklanacak
     
     @Column(length = 500)
     private String description;

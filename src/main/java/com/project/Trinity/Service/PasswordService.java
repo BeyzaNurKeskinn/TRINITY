@@ -56,7 +56,7 @@ public class PasswordService {
         password.setTitle(title);
         password.setUsername(username);
         if (rawPassword != null && !rawPassword.isBlank()) {
-            password.setPassword(passwordEncoder.encode(rawPassword));
+            password.setPassword(rawPassword, passwordEncoder); // Şifreleme
         }
         password.setDescription(description);
         password.setStatus(status != null ? Status.valueOf(status) : Status.ACTIVE);
@@ -81,7 +81,8 @@ public class PasswordService {
         User currentUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         return passwordRepository.findDistinctCategoryByUser(currentUser);
     }
-    public Password updatePassword(Long id, Long categoryId, String title, String username, String password, String status, String description) {
+    @Transactional
+    public Password updatePassword(Long id, Long categoryId, String title, String username, String rawPassword, String status, String description) {
         Password existingPassword = passwordRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Şifre bulunamadı: " + id));
         Category category = categoryRepository.findById(categoryId)
@@ -89,7 +90,9 @@ public class PasswordService {
         existingPassword.setCategory(category);
         existingPassword.setTitle(title);
         existingPassword.setUsername(username);
-        existingPassword.setPassword(password); // Şifreleme yapıyorsanız, burada şifrelemeyi unutmayın
+        if (rawPassword != null && !rawPassword.isBlank()) {
+            existingPassword.setPassword(rawPassword, passwordEncoder); // Şifreleme
+        }
         existingPassword.setStatus(Status.valueOf(status));
         existingPassword.setDescription(description);
         return passwordRepository.save(existingPassword);

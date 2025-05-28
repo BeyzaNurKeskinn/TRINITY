@@ -71,11 +71,11 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")
-                        .requestMatchers("/api/protected/admin").hasAuthority("ROLE_ADMIN")
+                        .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
+                        .requestMatchers("/api/protected/admin").hasAuthority("ADMIN")
                         .requestMatchers("/api/protected/user").authenticated()
                         .requestMatchers("/api/user/me").authenticated() // /api/user/me için authenticated yeterli
-                        .requestMatchers("/api/user/**").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN") // /api/user/** için USER veya ADMIN
+                        .requestMatchers("/api/user/**").hasAnyAuthority("USER", "ADMIN") // /api/user/** için USER veya ADMIN
                         .requestMatchers("/api/protected/user").authenticated()
                         // Diğer tüm istekler için kimlik doğrulama gerekli
                         .anyRequest().authenticated()

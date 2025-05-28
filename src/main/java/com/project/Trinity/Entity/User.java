@@ -1,19 +1,19 @@
-
 package com.project.Trinity.Entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
-
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
+
 @Data
 @Entity
 @Table(name = "users")
-public class User implements UserDetails {//Kullanıcı bilgilerini temsil eden varlık sınıfı. Spring Security ile çalışır.
+public class User implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -27,23 +27,31 @@ public class User implements UserDetails {//Kullanıcı bilgilerini temsil eden 
 
     @Enumerated(EnumType.STRING)
     private Role role;
-    
+
     @Column(unique = true)
     private String email;
 
     @Column(unique = true)
     private String phone;
 
+    @Enumerated(EnumType.STRING)
+    @Column(columnDefinition = "VARCHAR(20) DEFAULT 'ACTIVE'")
+    private Status status = Status.ACTIVE; // Yeni eklenen alan
+    
+    @Column(columnDefinition = "BYTEA")
+    private byte[] profilePicture; // Profil resmi için byte dizisi
+
+    @Column(name = "frozen_at")
+    private LocalDateTime frozenAt;
+
     public User() {
     }
 
-   
-
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
-    }//Kullanıcının yetkilerini döner (örneğin, ROLE_USER).
-    //Neden?: Spring Security, rollerle yetkilendirme yapar.
+        return List.of(new SimpleGrantedAuthority(role.name()));
+    }
+
 
     @Override
     public boolean isAccountNonExpired() {
@@ -62,6 +70,6 @@ public class User implements UserDetails {//Kullanıcı bilgilerini temsil eden 
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return status == Status.ACTIVE; // Aktif durumdaki kullanıcılar enabled kabul edilecek
     }
 }
