@@ -76,7 +76,11 @@ public class PasswordController {
         return ResponseEntity.noContent().build();
     }
 }
-
+@Data
+class PasswordUpdateRequest extends PasswordRequest {
+    @Pattern(regexp = "^[0-9]{6}$", message = "Doğrulama kodu 6 haneli olmalı")
+    private String verificationCode; // Doğrulama kodu eklendi
+}
 @Data
 class PasswordRequest {
     private Long id;

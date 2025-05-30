@@ -2,12 +2,15 @@
 package com.project.Trinity.Controller;
 
 import com.project.Trinity.Service.RefreshTokenService;
+import com.project.Trinity.Entity.Password;
 import com.project.Trinity.Entity.PasswordResetToken;
 import com.project.Trinity.Entity.User;
+import com.project.Trinity.Repository.PasswordRepository;
 import com.project.Trinity.Repository.PasswordResetTokenRepository;
 import com.project.Trinity.Repository.UserRepository;
 import com.project.Trinity.Service.EmailService;
 import com.project.Trinity.Service.InvalidRefreshTokenException;
+import com.project.Trinity.Service.PasswordService;
 import com.project.Trinity.Service.UserService;
 import com.project.Trinity.Service.UsernameAlreadyExistsException;
 import com.project.Trinity.Util.JwtUtil;
@@ -24,6 +27,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -33,22 +38,29 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import jakarta.mail.MessagingException;
 import jakarta.validation.Valid;
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {//Kullanıcı kaydı, girişi ve refresh token işlemlerini yöneten REST endpoint’leri.
+	private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
+
     private final UserService userService;
     private final RefreshTokenService refreshTokenService;
-    private final AuthenticationManager authenticationManager; // Yeni bağımlılık
-    private final JwtUtil jwtUtil; // Yeni bağımlılık
+    private final AuthenticationManager authenticationManager;
+    private final JwtUtil jwtUtil;
     private final UserRepository userRepository;
     private final PasswordResetTokenRepository tokenRepository;
     private final EmailService emailService;
+    private final PasswordRepository passwordRepository;
+    private final PasswordService passwordService; // Yeni bağımlılık
 
     public AuthController(UserService userService, RefreshTokenService refreshTokenService,
-                          AuthenticationManager authenticationManager, JwtUtil jwtUtil,UserRepository userRepository, PasswordResetTokenRepository tokenRepository,
-                          EmailService emailService) {
+                          AuthenticationManager authenticationManager, JwtUtil jwtUtil, UserRepository userRepository,
+                          PasswordResetTokenRepository tokenRepository, EmailService emailService,
+                          PasswordRepository passwordRepository, PasswordService passwordService) {
         this.userService = userService;
         this.refreshTokenService = refreshTokenService;
         this.authenticationManager = authenticationManager;
@@ -56,8 +68,9 @@ public class AuthController {//Kullanıcı kaydı, girişi ve refresh token işl
         this.userRepository = userRepository;
         this.tokenRepository = tokenRepository;
         this.emailService = emailService;
+        this.passwordRepository = passwordRepository;
+        this.passwordService = passwordService;
     }
-
     @PostMapping("/register")
     public ResponseEntity<String> register(@Valid @RequestBody RegisterRequest request) {
         if (request.getUsername() == null || request.getUsername().isBlank() ||
@@ -129,10 +142,59 @@ public class AuthController {//Kullanıcı kaydı, girişi ve refresh token işl
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
+    @GetMapping("/user/password/{id}")
+    public ResponseEntity<?> getPassword(@PathVariable Long id, Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            // Hata mesajlarını da JSON formatında dönmek daha tutarlıdır.
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Kimlik doğrulaması gerekli."));
+        }
+
+        try {
+            logger.info("Şifre alma isteği alındı, ID: {}", id);
+            Password password = passwordRepository.findById(id)
+                    .orElseThrow(() -> new IllegalArgumentException("Şifre bulunamadı."));
+            logger.info("Şifre bulundu, ID: {}, Kullanıcı: {}", id, password.getUser().getUsername());
+
+            User user = password.getUser();
+            if (!user.getUsername().equals(authentication.getName())) {
+                logger.warn("Kullanıcı {} şifreye erişim izni yok, ID: {}", authentication.getName(), id);
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Bu şifreye erişim izniniz yok."));
+            }
+
+            String decryptedPassword = passwordService.getDecryptedPassword(id);
+            logger.info("Şifre JSON olarak döndürülüyor, ID: {}, Değer: [GİZLENDİ]", id); // Loglarda şifreyi göstermeyelim
+
+            // --- DEĞİŞİKLİK BURADA ---
+            // 1. Şifreyi bir Map (JSON nesnesi) içine koyun.
+            Map<String, String> responseBody = new HashMap<>();
+            responseBody.put("password", decryptedPassword);
+
+            // 2. Yanıt olarak bu Map'i döndürün. Spring bunu otomatik olarak JSON'a çevirecektir.
+            return ResponseEntity.ok(responseBody);
+            // --- DEĞİŞİKLİK SONU ---
+
+        } catch (IllegalArgumentException e) {
+            logger.error("Şifre alma hatası, ID: {}, Hata: {}", id, e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            logger.error("Beklenmedik hata, ID: {}, Hata: {}", id, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "Bir hata oluştu."));
+        }
+    }
     @PostMapping("/user/send-verification-code")
     public ResponseEntity<?> sendVerificationCode(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Kimlik doğrulaması gerekli.");
+        }
+
         try {
             String username = authentication.getName();
+            if (username == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body("Kullanıcı adı alınamadı.");
+            }
+
             User user = userRepository.findByUsername(username)
                     .orElseThrow(() -> new UsernameNotFoundException("Kullanıcı bulunamadı: " + username));
             String code = String.format("%06d", new Random().nextInt(999999));
@@ -141,6 +203,9 @@ public class AuthController {//Kullanıcı kaydı, girişi ve refresh token işl
             tokenRepository.save(token);
             emailService.sendResetCodeEmail(user.getEmail(), code);
             return ResponseEntity.ok("Doğrulama kodu gönderildi.");
+        } catch (MessagingException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("E-posta gönderimi başarısız: " + e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Doğrulama kodu gönderimi başarısız: " + e.getMessage());

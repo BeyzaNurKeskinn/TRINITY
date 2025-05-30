@@ -6,10 +6,10 @@ import com.project.Trinity.Entity.Password;
 import com.project.Trinity.Entity.User;
 import com.project.Trinity.Repository.CategoryRepository;
 import com.project.Trinity.Repository.PasswordRepository;
+import com.project.Trinity.Util.EncryptionUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,12 +22,12 @@ public class PasswordService {
 
     private final PasswordRepository passwordRepository;
     private final CategoryRepository categoryRepository;
-    private final PasswordEncoder passwordEncoder;
+    private final EncryptionUtil encryptionUtil; // Enjekte ediliyor
 
-    public PasswordService(PasswordRepository passwordRepository, CategoryRepository categoryRepository, PasswordEncoder passwordEncoder) {
+    public PasswordService(PasswordRepository passwordRepository, CategoryRepository categoryRepository, EncryptionUtil encryptionUtil) {
         this.passwordRepository = passwordRepository;
         this.categoryRepository = categoryRepository;
-        this.passwordEncoder = passwordEncoder;
+        this.encryptionUtil = encryptionUtil;
     }
 
     @Transactional
@@ -56,7 +56,11 @@ public class PasswordService {
         password.setTitle(title);
         password.setUsername(username);
         if (rawPassword != null && !rawPassword.isBlank()) {
-            password.setPassword(rawPassword, passwordEncoder); // Şifreleme
+            try {
+                password.setPassword(encryptionUtil.encrypt(rawPassword)); // AES ile şifreleme
+            } catch (Exception e) {
+                throw new RuntimeException("Şifre şifreleme hatası: " + e.getMessage());
+            }
         }
         password.setDescription(description);
         password.setStatus(status != null ? Status.valueOf(status) : Status.ACTIVE);
@@ -73,7 +77,7 @@ public class PasswordService {
     @Transactional(readOnly = true)
     public List<Password> getPasswordsByCategory(String categoryName) {
         User currentUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        return passwordRepository.findByUserAndCategoryName(currentUser, categoryName);
+        return passwordRepository.findByUserAndCategoryNameAndStatus(currentUser, categoryName, Status.ACTIVE);
     }
 
     @Transactional(readOnly = true)
@@ -81,20 +85,32 @@ public class PasswordService {
         User currentUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         return passwordRepository.findDistinctCategoryByUser(currentUser);
     }
+
     @Transactional
     public Password updatePassword(Long id, Long categoryId, String title, String username, String rawPassword, String status, String description) {
+        User currentUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Password existingPassword = passwordRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Şifre bulunamadı: " + id));
+            .filter(p -> p.getCreatedBy().getId().equals(currentUser.getId()))
+            .filter(p -> p.getStatus() == Status.ACTIVE)
+            .orElseThrow(() -> new IllegalArgumentException("Aktif şifre bulunamadı veya yetkiniz yok: " + id));
+
         Category category = categoryRepository.findById(categoryId)
-            .orElseThrow(() -> new RuntimeException("Kategori bulunamadı: " + categoryId));
+            .filter(c -> c.getStatus() == Status.ACTIVE)
+            .orElseThrow(() -> new IllegalArgumentException("Aktif kategori bulunamadı: " + categoryId));
+
         existingPassword.setCategory(category);
         existingPassword.setTitle(title);
         existingPassword.setUsername(username);
         if (rawPassword != null && !rawPassword.isBlank()) {
-            existingPassword.setPassword(rawPassword, passwordEncoder); // Şifreleme
+            try {
+                existingPassword.setPassword(encryptionUtil.encrypt(rawPassword));
+            } catch (Exception e) {
+                throw new RuntimeException("Şifre şifreleme hatası: " + e.getMessage());
+            }
         }
         existingPassword.setStatus(Status.valueOf(status));
         existingPassword.setDescription(description);
+
         return passwordRepository.save(existingPassword);
     }
 
@@ -114,5 +130,11 @@ public class PasswordService {
 
     public long countPasswords() {
         return passwordRepository.count();
+    }
+
+    public String getDecryptedPassword(Long id) throws Exception {
+        Password password = passwordRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Şifre bulunamadı."));
+        return encryptionUtil.decrypt(password.getPassword());
     }
 }

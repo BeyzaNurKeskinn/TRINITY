@@ -34,10 +34,15 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-        // /api/auth/** endpoint'lerini filtrelemeden çıkar
         String requestURI = request.getRequestURI();
-        if (requestURI.startsWith("/api/auth/")) {
-            logger.debug("Skipping JWT validation for /api/auth/** endpoint: {}", requestURI);
+        
+        // /api/auth/register, /api/auth/login, /api/auth/refresh-token, /api/auth/forgot-password, /api/auth/reset-password için JWT doğrulama atla
+        if (requestURI.startsWith("/api/auth/register") ||
+            requestURI.startsWith("/api/auth/login") ||
+            requestURI.startsWith("/api/auth/refresh-token") ||
+            requestURI.startsWith("/api/auth/forgot-password") ||
+            requestURI.startsWith("/api/auth/reset-password")) {
+            logger.debug("Skipping JWT validation for endpoint: {}", requestURI);
             filterChain.doFilter(request, response);
             return;
         }
@@ -70,5 +75,4 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
             }
         }
         filterChain.doFilter(request, response);
-    }
-}
+    }}

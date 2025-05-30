@@ -8,6 +8,10 @@ import java.time.LocalDateTime;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import com.project.Trinity.Util.EncryptionUtil;
+
+
+
 @Entity
 @Table(name = "passwords")
 @Data
@@ -48,13 +52,5 @@ public class Password {
     @JoinColumn(name = "created_by", nullable = false)
     private User createdBy;
     
-    // Şifreyi bcrypt ile şifreleme
-    public void setPassword(String rawPassword, PasswordEncoder passwordEncoder) {
-        this.password = passwordEncoder.encode(rawPassword);
-    }
-
-    // Şifreyi almak için (gerekirse)
-    public String getPassword() {
-        return this.password;
-    }
+ 
 }

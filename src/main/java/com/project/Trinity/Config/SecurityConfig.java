@@ -66,28 +66,27 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, AuthenticationManager authenticationManager, JwtUtil jwtUtil, RefreshTokenService refreshTokenService) throws Exception {
         http
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .csrf(csrf -> csrf.disable())
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
-                        .requestMatchers("/api/protected/admin").hasAuthority("ADMIN")
-                        .requestMatchers("/api/protected/user").authenticated()
-                        .requestMatchers("/api/user/me").authenticated() // /api/user/me için authenticated yeterli
-                        .requestMatchers("/api/user/**").hasAnyAuthority("USER", "ADMIN") // /api/user/** için USER veya ADMIN
-                        .requestMatchers("/api/protected/user").authenticated()
-                        // Diğer tüm istekler için kimlik doğrulama gerekli
-                        .anyRequest().authenticated()
-                )
-                .authenticationProvider(authenticationProvider())
-                .addFilterAt(jwtAuthenticationFilter(authenticationManager, jwtUtil, refreshTokenService), UsernamePasswordAuthenticationFilter.class)
-                .addFilterBefore(jwtAuthorizationFilter(), UsernamePasswordAuthenticationFilter.class);
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .csrf(csrf -> csrf.disable())
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .authorizeHttpRequests(auth -> auth
+                // Kimlik doğrulaması gerektirmeyen endpoint'ler
+                .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/refresh-token", "/api/auth/forgot-password", "/api/auth/reset-password").permitAll()
+                // /api/auth/user/** için kimlik doğrulaması gerekli
+                .requestMatchers("/api/auth/user/**").authenticated()
+                .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
+                .requestMatchers("/api/protected/admin").hasAuthority("ADMIN")
+                .requestMatchers("/api/protected/user").authenticated()
+                .requestMatchers("/api/user/me").authenticated()
+                .requestMatchers("/api/user/**").hasAnyAuthority("USER", "ADMIN")
+                .anyRequest().authenticated()
+            )
+            .authenticationProvider(authenticationProvider())
+            .addFilterAt(jwtAuthenticationFilter(authenticationManager, jwtUtil, refreshTokenService), UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(jwtAuthorizationFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
-    }//Hangi endpoint’lerin korunacağını, hangi filtrelerin çalışacağını belirler.
-    
-
+    }
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {//Frontend ile backend’in güvenli iletişim kurması için.
         CorsConfiguration configuration = new CorsConfiguration();

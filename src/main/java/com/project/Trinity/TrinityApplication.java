@@ -15,3 +15,4 @@ public class TrinityApplication {
 	}
 //Bu, Spring’in “her şeyi hallet” dediğimiz yerdir.
 }
+ 
