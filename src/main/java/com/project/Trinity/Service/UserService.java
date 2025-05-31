@@ -4,11 +4,13 @@ import com.project.Trinity.Entity.PasswordResetToken;
 import com.project.Trinity.Entity.Role;
 import com.project.Trinity.Entity.User;
 import com.project.Trinity.Entity.AuditLog;
+import com.project.Trinity.Entity.Password;
 import com.project.Trinity.Entity.Status;
 import com.project.Trinity.Repository.PasswordResetTokenRepository;
 import com.project.Trinity.Repository.RefreshTokenRepository;
 import com.project.Trinity.Repository.UserRepository;
 import com.project.Trinity.Repository.AuditLogRepository;
+import com.project.Trinity.Repository.PasswordRepository;
 import com.project.Trinity.DTO.UserResponse;
 import com.project.Trinity.Service.PasswordService;
 import jakarta.persistence.EntityNotFoundException;
@@ -25,9 +27,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 @Service
@@ -39,6 +44,7 @@ public class UserService implements UserDetailsService {
     private final EmailService emailService;
     private final PasswordService passwordService;
     private final AuditLogRepository auditLogRepository;
+    private final PasswordRepository passwordRepository;
 
     @Autowired
     private RefreshTokenRepository refreshTokenRepository;
@@ -49,13 +55,15 @@ public class UserService implements UserDetailsService {
             PasswordEncoder passwordEncoder,
             EmailService emailService,
             PasswordService passwordService,
-            AuditLogRepository auditLogRepository) {
+            AuditLogRepository auditLogRepository,PasswordRepository passwordRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.emailService = emailService;
         this.tokenRepository = tokenRepository;
         this.passwordService = passwordService;
         this.auditLogRepository = auditLogRepository;
+        this.passwordRepository = passwordRepository;
+        
     }
 
     @Override
@@ -246,12 +254,48 @@ public class UserService implements UserDetailsService {
                 .map(AuditLog::getAction)
                 .collect(Collectors.toList());
     }
- // Sık görüntülenen şifreleri döndür
-    public List<String> getMostViewedPasswords(String username) {
-        // Gerçek implementasyonda veritabanından en çok görüntülenen şifreleri al
-        return List.of("Şifre1", "Şifre2", "Şifre3");
+    
+    public Map<String, Long> getPasswordViewTrend(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("Kullanıcı bulunamadı: " + username));
+        LocalDateTime startDate = LocalDateTime.now().minusDays(7);
+       
+		List<Password> passwords = passwordRepository.findByUser(user);
+
+        Map<String, Long> trend = new TreeMap<>();
+        LocalDateTime current = startDate;
+        while (current.isBefore(LocalDateTime.now())) {
+            String dateKey = current.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+            trend.put(dateKey, 0L);
+            current = current.plusDays(1);
+        }
+
+        for (Password password : passwords) {
+            if (password.getLastUsed() != null && password.getLastUsed().isAfter(startDate)) {
+                String date = password.getLastUsed().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+                trend.put(date, trend.getOrDefault(date, 0L) + 1);
+            }
+        }
+
+        return trend;
     }
+    
+    public List<String> getMostViewedPasswords(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("Kullanıcı bulunamadı: " + username));
+        return passwordService.getMostViewedPasswordsByUser(user, 3)
+                .stream()
+                .map(Password::getTitle)
+                .collect(Collectors.toList());
+    }
+    
+
     public List<String> getFeaturedPasswords(String username) {
-        return List.of("Şifre1", "Şifre2");
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("Kullanıcı bulunamadı: " + username));
+        return passwordService.getFeaturedPasswordsByUser(user)
+                .stream()
+                .map(Password::getTitle)
+                .collect(Collectors.toList());
     }
 }

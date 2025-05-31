@@ -22,4 +22,12 @@ public interface PasswordRepository extends JpaRepository<Password, Long> {
     // Yeni metod: Kullanıcı ve kategori adına göre yalnızca ACTIVE şifreleri getir
     @Query("SELECT p FROM Password p WHERE p.user = :user AND p.category.name = :categoryName AND p.status = :status")
     List<Password> findByUserAndCategoryNameAndStatus(@Param("user") User user, @Param("categoryName") String categoryName, @Param("status") Status status);
+    
+    @Query("SELECT p FROM Password p WHERE p.user = :user AND p.status = :status ORDER BY p.viewCount DESC")
+    List<Password> findByUserAndStatusOrderByViewCountDesc(@Param("user") User user, @Param("status") Status status);
+
+    List<Password> findByUserAndIsFeaturedTrueAndStatus(@Param("user") User user, @Param("status") Status status);
+    
+    @Query("SELECT p.category.name, COUNT(p) FROM Password p WHERE p.status = 'ACTIVE' GROUP BY p.category.name")
+    List<Object[]> findPasswordCountByCategory();
 }

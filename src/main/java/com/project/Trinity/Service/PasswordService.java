@@ -13,7 +13,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class PasswordService {
@@ -137,4 +139,34 @@ public class PasswordService {
                 .orElseThrow(() -> new IllegalArgumentException("Şifre bulunamadı."));
         return encryptionUtil.decrypt(password.getPassword());
     }
+    
+    @Transactional
+    public void incrementViewCount(Long passwordId) {
+        Password password = passwordRepository.findById(passwordId)
+                .orElseThrow(() -> new IllegalArgumentException("Şifre bulunamadı: " + passwordId));
+        password.setViewCount(password.getViewCount() + 1);
+        password.setLastUsed(LocalDateTime.now()); // lastUsed alanını da güncelleyelim
+        passwordRepository.save(password);
+    }
+
+    @Transactional
+    public void toggleFeatured(Long passwordId, boolean isFeatured) {
+        Password password = passwordRepository.findById(passwordId)
+                .orElseThrow(() -> new IllegalArgumentException("Şifre bulunamadı: " + passwordId));
+        password.setIsFeatured(isFeatured);
+        passwordRepository.save(password);
+    }
+
+    public List<Password> getMostViewedPasswordsByUser(User user, int limit) {
+        return passwordRepository.findByUserAndStatusOrderByViewCountDesc(user, Status.ACTIVE)
+                .stream()
+                .limit(limit)
+                .collect(Collectors.toList());
+    }
+
+    public List<Password> getFeaturedPasswordsByUser(User user) {
+        return passwordRepository.findByUserAndIsFeaturedTrueAndStatus(user, Status.ACTIVE);
+    }
+    
+    
 }

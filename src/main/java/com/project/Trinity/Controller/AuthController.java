@@ -30,6 +30,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -145,7 +146,6 @@ public class AuthController {//Kullanıcı kaydı, girişi ve refresh token işl
     @GetMapping("/user/password/{id}")
     public ResponseEntity<?> getPassword(@PathVariable Long id, Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated()) {
-            // Hata mesajlarını da JSON formatında dönmek daha tutarlıdır.
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Kimlik doğrulaması gerekli."));
         }
 
@@ -161,18 +161,16 @@ public class AuthController {//Kullanıcı kaydı, girişi ve refresh token işl
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Bu şifreye erişim izniniz yok."));
             }
 
-            String decryptedPassword = passwordService.getDecryptedPassword(id);
-            logger.info("Şifre JSON olarak döndürülüyor, ID: {}, Değer: [GİZLENDİ]", id); // Loglarda şifreyi göstermeyelim
+            // Görüntülenme sayısını artır
+            passwordService.incrementViewCount(id);
 
-            // --- DEĞİŞİKLİK BURADA ---
-            // 1. Şifreyi bir Map (JSON nesnesi) içine koyun.
+            String decryptedPassword = passwordService.getDecryptedPassword(id);
+            logger.info("Şifre JSON olarak döndürülüyor, ID: {}, Değer: [GİZLENDİ]", id);
+
             Map<String, String> responseBody = new HashMap<>();
             responseBody.put("password", decryptedPassword);
 
-            // 2. Yanıt olarak bu Map'i döndürün. Spring bunu otomatik olarak JSON'a çevirecektir.
             return ResponseEntity.ok(responseBody);
-            // --- DEĞİŞİKLİK SONU ---
-
         } catch (IllegalArgumentException e) {
             logger.error("Şifre alma hatası, ID: {}, Hata: {}", id, e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
@@ -181,8 +179,54 @@ public class AuthController {//Kullanıcı kaydı, girişi ve refresh token işl
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "Bir hata oluştu."));
         }
     }
+    
+    @GetMapping("/user/view-trend")
+    public ResponseEntity<?> getPasswordViewTrend(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Kimlik doğrulaması gerekli."));
+        }
+
+        try {
+            Map<String, Long> trend = userService.getPasswordViewTrend(authentication.getName());
+            return ResponseEntity.ok(trend);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "Bir hata oluştu."));
+        }
+    }
+    
+    @PutMapping("/user/passwords/{id}/toggle-featured")
+    public ResponseEntity<?> toggleFeaturedPassword(
+        @PathVariable Long id,
+        @RequestBody Map<String, Boolean> requestBody,
+        Authentication authentication
+    ) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Kimlik doğrulaması gerekli."));
+        }
+
+        try {
+            Password password = passwordRepository.findById(id)
+                    .orElseThrow(() -> new IllegalArgumentException("Şifre bulunamadı."));
+            if (!password.getUser().getUsername().equals(authentication.getName())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Bu şifreye erişim izniniz yok."));
+            }
+
+            boolean isFeatured = requestBody.getOrDefault("isFeatured", false);
+            passwordService.toggleFeatured(id, isFeatured);
+
+            return ResponseEntity.ok("Öne çıkarma durumu güncellendi.");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "Bir hata oluştu."));
+        }
+    }
+    
     @PostMapping("/user/send-verification-code")
-    public ResponseEntity<?> sendVerificationCode(Authentication authentication) {
+    public ResponseEntity<?> sendVerificationCode(
+        @RequestBody SendVerificationCodeRequest request,
+        Authentication authentication
+    ) {
         if (authentication == null || !authentication.isAuthenticated()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body("Kimlik doğrulaması gerekli.");
@@ -201,7 +245,21 @@ public class AuthController {//Kullanıcı kaydı, girişi ve refresh token işl
             LocalDateTime expiryDate = LocalDateTime.now().plusMinutes(15);
             PasswordResetToken token = new PasswordResetToken(code, user, expiryDate);
             tokenRepository.save(token);
-            emailService.sendResetCodeEmail(user.getEmail(), code);
+
+            // Context'e göre uygun e-posta metodunu çağır
+            String context = request.getContext() != null ? request.getContext() : "view"; // Varsayılan: view
+            switch (context) {
+                case "view":
+                    emailService.sendViewPasswordCodeEmail(user.getEmail(), code);
+                    break;
+                case "update":
+                    emailService.sendUpdatePasswordCodeEmail(user.getEmail(), code);
+                    break;
+                default:
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .body("Geçersiz context: " + context);
+            }
+
             return ResponseEntity.ok("Doğrulama kodu gönderildi.");
         } catch (MessagingException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -253,6 +311,10 @@ class RegisterRequest {
 class VerifyCodeRequest {
     @NotBlank(message = "Doğrulama kodu zorunludur")
     private String code;
+}
+@Data
+class SendVerificationCodeRequest {
+    private String context; // "view", "update" veya null olabilir
 }
 @Data
 class ForgotPasswordRequest {
