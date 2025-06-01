@@ -120,6 +120,8 @@ public class AuthController {//Kullanıcı kaydı, girişi ve refresh token işl
             return new ResponseEntity<>(e.getMessage(), HttpStatus.UNAUTHORIZED);
         }
     }
+    
+    
     @PostMapping("/forgot-password")
     public ResponseEntity<?> forgotPassword(@RequestBody ForgotPasswordRequest request) {
         try {

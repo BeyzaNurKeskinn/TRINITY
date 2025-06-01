@@ -16,6 +16,7 @@ public interface PasswordRepository extends JpaRepository<Password, Long> {
 
     List<Password> findByUser(User user);
 
+    
     @Query("SELECT DISTINCT p.category.name FROM Password p WHERE p.user = :user AND p.status = 'ACTIVE'")
     List<String> findDistinctCategoryByUser(@Param("user") User user);
 

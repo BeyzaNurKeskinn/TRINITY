@@ -53,6 +53,7 @@ public class Password {
     @JoinColumn(name = "created_by", nullable = false)
     private User createdBy;
     
+    
     @Column(name = "view_count", columnDefinition = "integer default 0")
     private int viewCount = 0;
     

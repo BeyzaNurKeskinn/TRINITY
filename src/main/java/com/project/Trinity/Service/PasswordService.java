@@ -134,6 +134,7 @@ public class PasswordService {
         return passwordRepository.count();
     }
 
+    
     public String getDecryptedPassword(Long id) throws Exception {
         Password password = passwordRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Şifre bulunamadı."));
