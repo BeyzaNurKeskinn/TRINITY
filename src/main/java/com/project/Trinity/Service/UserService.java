@@ -94,21 +94,51 @@ public class UserService implements UserDetailsService {
 
     @Transactional
     public UserResponse createUser(String username, String password, String email, String phone) {
+        // Sadece 6 parametreli fonksiyonu çağır, burada tekrar kayıt yapma!
+        return createUser(username, password, email, phone, "ACTIVE", "USER");
+    }
+
+    @Transactional
+    public UserResponse createUser(String username, String password, String email, String phone, String status, String role) {
+        // Null kontrolleri ekleyelim
+        if (username == null || username.trim().isEmpty()) {
+            throw new IllegalArgumentException("Kullanıcı adı boş olamaz");
+        }
+        if (email == null || email.trim().isEmpty()) {
+            throw new IllegalArgumentException("Email boş olamaz");
+        }
+        if (phone == null || phone.trim().isEmpty()) {
+            throw new IllegalArgumentException("Telefon boş olamaz");
+        }
+        if (password == null || password.trim().isEmpty()) {
+            throw new IllegalArgumentException("Şifre boş olamaz");
+        }
+        if (status == null || status.trim().isEmpty()) {
+            status = "ACTIVE"; // Varsayılan değer
+        }
+        if (role == null || role.trim().isEmpty()) {
+            role = "USER"; // Varsayılan değer
+        }
+
+        // Mevcut kontroller
         if (userRepository.findByUsername(username).isPresent()) {
             throw new UsernameAlreadyExistsException("Kullanıcı adı zaten mevcut: " + username);
         }
         if (userRepository.findByEmail(email).isPresent()) {
-            throw new IllegalArgumentException("Email already exists: " + email);
+            throw new IllegalArgumentException("Email zaten mevcut: " + email);
         }
         if (userRepository.findByPhone(phone).isPresent()) {
-            throw new IllegalArgumentException("Phone already exists: " + phone);
+            throw new IllegalArgumentException("Telefon zaten mevcut: " + phone);
         }
+
         User newUser = new User();
-        newUser.setUsername(username);
+        newUser.setUsername(username.trim());
         newUser.setPassword(passwordEncoder.encode(password));
-        newUser.setEmail(email);
-        newUser.setPhone(phone);
-        newUser.setRole(Role.USER);
+        newUser.setEmail(email.trim());
+        newUser.setPhone(phone.trim());
+        newUser.setStatus(Status.valueOf(status));
+        newUser.setRole(Role.valueOf(role));
+
         User savedUser = userRepository.save(newUser);
 
         AuditLog auditLog = new AuditLog();
@@ -116,7 +146,15 @@ public class UserService implements UserDetailsService {
         auditLog.setTimestamp(LocalDateTime.now());
         auditLogRepository.save(auditLog);
 
-        return new UserResponse(savedUser.getId(), savedUser.getUsername(), savedUser.getEmail(), savedUser.getPhone());
+        // UserResponse'u status ve role ile birlikte döndür
+        return new UserResponse(
+            savedUser.getId(),
+            savedUser.getUsername(),
+            savedUser.getEmail(),
+            savedUser.getPhone(),
+            savedUser.getStatus().toString(),
+            savedUser.getRole().toString()
+        );
     }
 
     public UserResponse updateUser(Long id, String newUsername, String password, String email, String phone, String status, String role) {

@@ -27,7 +27,7 @@ public interface PasswordRepository extends JpaRepository<Password, Long> {
     @Query("SELECT p FROM Password p WHERE p.user = :user AND p.status = :status ORDER BY p.viewCount DESC")
     List<Password> findByUserAndStatusOrderByViewCountDesc(@Param("user") User user, @Param("status") Status status);
 
-    List<Password> findByUserAndIsFeaturedTrueAndStatus(@Param("user") User user, @Param("status") Status status);
+   List<Password> findByUserAndIsFeaturedTrueAndStatus(@Param("user") User user, @Param("status") Status status);
     
     @Query("SELECT p.category.name, COUNT(p) FROM Password p WHERE p.status = 'ACTIVE' GROUP BY p.category.name")
     List<Object[]> findPasswordCountByCategory();

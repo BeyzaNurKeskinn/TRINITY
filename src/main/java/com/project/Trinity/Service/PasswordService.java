@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 public class PasswordService {
@@ -151,11 +152,14 @@ public class PasswordService {
     }
 
     @Transactional
-    public void toggleFeatured(Long passwordId, boolean isFeatured) {
+    public Password toggleFeatured(Long passwordId, boolean isFeatured) {
         Password password = passwordRepository.findById(passwordId)
                 .orElseThrow(() -> new IllegalArgumentException("Şifre bulunamadı: " + passwordId));
+        logger.info("Öne çıkarma güncelleniyor: id={}, isFeatured={}", passwordId, isFeatured);
         password.setIsFeatured(isFeatured);
-        passwordRepository.save(password);
+        Password savedPassword = passwordRepository.save(password);
+        logger.info("Kaydedilen şifre: id={}, isFeatured={}", savedPassword.getId(), savedPassword.getIsFeatured());
+        return savedPassword;
     }
 
     public List<Password> getMostViewedPasswordsByUser(User user, int limit) {
@@ -168,6 +172,13 @@ public class PasswordService {
     public List<Password> getFeaturedPasswordsByUser(User user) {
         return passwordRepository.findByUserAndIsFeaturedTrueAndStatus(user, Status.ACTIVE);
     }
+
+    @Transactional(readOnly = true)
+    public Password findById(Long id) {
+        return passwordRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Şifre bulunamadı: " + id));
+    }
+
     
     
 }

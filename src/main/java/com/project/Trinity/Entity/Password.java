@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.stream.Stream;
 
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -90,7 +91,8 @@ public class Password {
     public int getViewCount() { return viewCount; }
     public void setViewCount(int viewCount) { this.viewCount = viewCount; }
 
-    public boolean isFeatured() { return isFeatured; } // Getter
-    public void setIsFeatured(boolean isFeatured) { this.isFeatured = isFeatured; } // Setter
+    public boolean getIsFeatured() { return isFeatured; }
+    public void setIsFeatured(boolean isFeatured) { this.isFeatured = isFeatured; }
+
 }
   

@@ -106,12 +106,99 @@ public class UserController {
         );
         return ResponseEntity.ok(response);
     }
+    @PostMapping("/admin/users")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserInfoResponse> createUser(@Valid @RequestBody UserUpdateRequest request) {
+        try {
+            // Null kontrolleri
+            if (request.getUsername() == null || request.getUsername().trim().isEmpty()) {
+                return ResponseEntity.badRequest().build();
+            }
+            if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
+                return ResponseEntity.badRequest().build();
+            }
+            if (request.getPhone() == null || request.getPhone().trim().isEmpty()) {
+                return ResponseEntity.badRequest().build();
+            }
+            if (request.getPassword() == null || request.getPassword().trim().isEmpty()) {
+                return ResponseEntity.badRequest().build();
+            }
+
+            // Varsayılan değerleri ayarla
+            String status = request.getStatus() != null ? request.getStatus() : "ACTIVE";
+            String role = request.getRole() != null ? request.getRole() : "USER";
+
+            UserResponse userResponse = userService.createUser(
+                request.getUsername(),
+                request.getPassword(),
+                request.getEmail(),
+                request.getPhone(),
+                status,
+                role
+            );
+
+            // Yeni kullanıcıyı DB'den çek
+            User user = userRepository.findByUsername(userResponse.getUsername())
+                .orElseThrow(() -> new UsernameNotFoundException("Kullanıcı bulunamadı: " + userResponse.getUsername()));
+
+            String profilePictureBase64 = user.getProfilePicture() != null
+                ? Base64.getEncoder().encodeToString(user.getProfilePicture())
+                : null;
+
+            UserInfoResponse response = new UserInfoResponse(
+                user.getId(),
+                userResponse.getUsername(),
+                userResponse.getEmail(),
+                userResponse.getPhone(),
+                user.getRole().name(),
+                user.getStatus().toString(),
+                profilePictureBase64
+            );
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            // Hata durumunda detaylı mesaj döndür
+            return ResponseEntity.badRequest().build();
+        }
+    }
     @PostMapping("/user/upload-profile-picture")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<String> uploadProfilePicture(@RequestParam("file") MultipartFile file, Authentication authentication) throws IOException {
         String username = authentication.getName();
         userService.uploadProfilePicture(username, file.getBytes());
         return ResponseEntity.ok("Profil resmi başarıyla yüklendi.");
+    }
+ // Yeni Endpoint: Kullanıcı kendi bilgilerini günceller
+    @PutMapping("/user/update")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<UserInfoResponse> updateCurrentUser(@Valid @RequestBody UserUpdateRequest request, Authentication authentication) {
+        String username = authentication.getName();
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("Kullanıcı bulunamadı: " + username));
+
+        UserResponse userResponse = userService.updateUser(
+                user.getId(),
+                request.getUsername(),
+                request.getPassword(), // Şifre isteğe bağlı
+                request.getEmail(),
+                request.getPhone(),
+                user.getStatus().toString(), // Mevcut durumu koru
+                user.getRole().name() // Mevcut rolü koru
+        );
+
+        String profilePictureBase64 = user.getProfilePicture() != null 
+                ? Base64.getEncoder().encodeToString(user.getProfilePicture()) 
+                : null;
+        UserInfoResponse response = new UserInfoResponse(
+                user.getId(),
+                userResponse.getUsername(),
+                userResponse.getEmail(),
+                userResponse.getPhone(),
+                user.getRole().name(),
+                user.getStatus().toString(),
+                profilePictureBase64
+        );
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/user/freeze-account")
@@ -121,21 +208,9 @@ public class UserController {
         userService.freezeAccount(username);
         return ResponseEntity.ok("Hesabınız donduruldu. 30 gün içinde tekrar aktif hale getirmezseniz hesabınız silinecek.");
     }
-    @GetMapping("/user/most-viewed-passwords")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<String>> getMostViewedPasswords(Authentication authentication) {
-        String username = authentication.getName();
-        List<String> passwords = userService.getMostViewedPasswords(username);
-        return ResponseEntity.ok(passwords);
-    }
 
-    @GetMapping("/user/featured-passwords")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<String>> getFeaturedPasswords(Authentication authentication) {
-        String username = authentication.getName();
-        List<String> passwords = userService.getFeaturedPasswords(username); // Güncellendi
-        return ResponseEntity.ok(passwords);
-    }
+
+
     @Data
     public static class UserInfoResponse {
         private Long id;
