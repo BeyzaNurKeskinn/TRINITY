@@ -1,26 +1,39 @@
-TRINITY (Backend)
-This is the backend repository for the Trinity Password Manager, a secure application designed to store and manage user passwords with robust authentication and encryption mechanisms. The backend provides RESTful APIs to handle user authentication, password management, and administrative tasks. It is currently under development, with the latest changes working locally but not yet fully reflected in this repository.
-Features
-User Authentication: Supports registration, login, and token-based authentication using JWT (JSON Web Tokens) and refresh tokens.
-Password Management: Allows users to securely store, categorize, update, and delete passwords with AES encryption for sensitive data and BCrypt for password hashing.
-Admin Dashboard: Provides administrators with insights into user activity, password statistics, and category distribution.
-Secure Password Reset: Implements a verification code-based password reset mechanism via email.
-Category Management: Enables admins to create, update, and delete password categories.
-Audit Logging: Tracks significant actions (e.g., user creation, password updates) for transparency.
-CORS Support: Configured for secure communication with the frontend running on http://localhost:5173.
-Technologies
-Java 17: Core programming language.
-Spring Boot 3.2.4: Framework for building RESTful APIs and managing dependencies.
-Spring Security: Handles authentication and authorization with JWT and role-based access control (USER, ADMIN).
-PostgreSQL: Database for storing users, passwords, categories, and tokens.
-JPA/Hibernate: For database operations and entity management.
-BCrypt: For secure password hashing.
-AES: For encrypting sensitive password data.
-JavaMailSender: For sending verification and password reset emails.
-Lombok: Reduces boilerplate code.
-Maven: Dependency management and build tool.
-SLF4J: Logging framework for debugging and monitoring.
-Project Structure
+# TRINITY (Backend)
+
+Bu, Trinity Password Manager'ın arka uç (backend) deposudur. Güvenli kimlik doğrulama ve şifreleme mekanizmaları ile kullanıcı şifrelerini depolamak ve yönetmek için tasarlanmış güvenli bir uygulamadır. Backend, kullanıcı kimlik doğrulama, şifre yönetimi ve yönetici görevlerini gerçekleştiren RESTful API'ler sağlar. Şu anda geliştirme aşamasındadır; en son değişiklikler yerel ortamda çalışmakta fakat henüz bu depoya tamamen yansıtılmamıştır.
+
+---
+
+## 🚀 Özellikler
+
+- **Kullanıcı Kimlik Doğrulama**: JWT (JSON Web Tokens) ve yenileme tokenları ile kayıt, giriş ve token tabanlı kimlik doğrulama.
+- **Şifre Yönetimi**: Şifrelerin güvenli şekilde AES ile şifrelenerek depolanması. Parola hashleme için BCrypt.
+- **Yönetici Paneli**: Kullanıcı etkinlikleri, parola istatistikleri ve kategori dağılımı.
+- **Güvenli Parola Sıfırlama**: E-posta üzerinden doğrulama kodu ile şifre sıfırlama.
+- **Kategori Yönetimi**: Yöneticiler için şifre kategorilerini oluşturma, güncelleme ve silme işlemleri.
+- **Denetim Günlüğü (Audit Logging)**: Kullanıcı oluşturma, şifre güncelleme gibi önemli işlemlerin izlenmesi.
+- **CORS Desteği**: Frontend için `http://localhost:5173` adresinden güvenli iletişim yapılandırması.
+
+---
+
+## 🛠️ Kullanılan Teknolojiler
+
+- **Java 17**
+- **Spring Boot 3.2.4**
+- **Spring Security**
+- **PostgreSQL**
+- **JPA / Hibernate**
+- **BCrypt & AES**
+- **JavaMailSender**
+- **Lombok**
+- **Maven**
+- **SLF4J**
+
+---
+
+## 📁 Proje Yapısı
+
+
 TRINITY/
 ├── src/main/java/com/project/Trinity/
 │   ├── Config/                # Security, password encoding, and global exception handling configurations
