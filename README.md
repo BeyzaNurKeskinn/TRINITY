@@ -153,13 +153,6 @@ Development Status
 
 To see the latest developments: https://github.com/BeyzaNurKeskinn/Trinity-Password_Manager
 
-Future Improvements
-
-Push local changes to GitHub.
-Add unit and integration tests.
-Implement rate limiting and two-factor authentication.
-Optimize database queries.
-Enhance error handling for production.
 
 Contributing
 Contributions are welcome! Fork the repository, create a branch, and submit a pull request.
