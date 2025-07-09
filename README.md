@@ -79,48 +79,70 @@ cd TRINITY
 Configure Environment:
 
 Create a PostgreSQL database named trinity.
-Update src/main/resources/application.properties:spring.datasource.url=jdbc:postgresql://localhost:5432/trinity
-spring.datasource.username=your_username
-spring.datasource.password=your_password
-jwt.secret=your_base64_jwt_secret
-encryption.secret-key=your_base64_aes_key
-spring.mail.host=smtp.gmail.com
-spring.mail.port=587
-spring.mail.username=your_email
-spring.mail.password=your_app_password
+Update src/main/resources/application.properties:
 
+    spring.datasource.url=jdbc:postgresql://localhost:5432/trinity
 
+    spring.datasource.username=your_username
+
+    spring.datasource.password=your_password
+
+    jwt.secret=your_base64_jwt_secret
+
+    encryption.secret-key=your_base64_aes_key
+
+    spring.mail.host=smtp.gmail.com
+
+    spring.mail.port=587
+
+    spring.mail.username=your_email
+
+    spring.mail.password=your_app_password
 
 
 Generate Secret Keys:
 
-JWT secret:$RandomBytes = [System.Security.Cryptography.RandomNumberGenerator]::Create()
-$Bytes = [byte[]]::new(32)
-$RandomBytes.GetBytes($Bytes)
-[Convert]::ToBase64String($Bytes)
+JWT secret:
+
+    $RandomBytes = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+
+    $Bytes = [byte[]]::new(32)
+
+    $RandomBytes.GetBytes($Bytes)
+
+    [Convert]::ToBase64String($Bytes)
 
 
-AES encryption key:$RandomBytes = [System.Security.Cryptography.RandomNumberGenerator]::Create()
-$Bytes = [byte[]]::new(16)
-$RandomBytes.GetBytes($Bytes)
-[Convert]::ToBase64String($Bytes)
+AES encryption key:
+
+    $RandomBytes = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+
+    $Bytes = [byte[]]::new(16)
+
+    $RandomBytes.GetBytes($Bytes)
+
+    [Convert]::ToBase64String($Bytes)
 
 
 
 
 Build and Run:
-mvn clean install
-mvn spring-boot:run
+
+        mvn clean install
+        
+        mvn spring-boot:run
 
 The backend runs on http://localhost:8080.
 
 Test Endpoints:
 
 POST /api/auth/register: Register a new user.
-POST /api/auth/login: Log in and get tokens.
-GET /api/user/passwords: Retrieve user passwords (authenticated).
-GET /api/admin/dashboard: Admin dashboard data (ADMIN role required).
 
+POST /api/auth/login: Log in and get tokens.
+
+GET /api/user/passwords: Retrieve user passwords (authenticated).
+
+GET /api/admin/dashboard: Admin dashboard data (ADMIN role required).
 
 
 Development Status
