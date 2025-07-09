@@ -65,15 +65,19 @@ Setup Instructions
 
 Prerequisites:
 
-Java 17
-Maven 3.9.9
-PostgreSQL
-SMTP server credentials (e.g., Gmail)
+        Java 17
+
+        Maven 3.9.9
+
+        PostgreSQL
+
+        SMTP server credentials (e.g., Gmail)
 
 
 Clone the Repository:
-git clone https://github.com/BeyzaNurKeskinn/TRINITY.git
-cd TRINITY
+
+        git clone https://github.com/BeyzaNurKeskinn/TRINITY.git
+        cd TRINITY
 
 
 Configure Environment:
@@ -136,13 +140,13 @@ The backend runs on http://localhost:8080.
 
 Test Endpoints:
 
-POST /api/auth/register: Register a new user.
+    POST /api/auth/register: Register a new user.
 
-POST /api/auth/login: Log in and get tokens.
+    POST /api/auth/login: Log in and get tokens.
 
-GET /api/user/passwords: Retrieve user passwords (authenticated).
+    GET /api/user/passwords: Retrieve user passwords (authenticated).
 
-GET /api/admin/dashboard: Admin dashboard data (ADMIN role required).
+    GET /api/admin/dashboard: Admin dashboard data (ADMIN role required).
 
 
 Development Status
