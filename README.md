@@ -1,43 +1,65 @@
-TRINITY (Backend)
-This is the backend repository for the Trinity Password Manager, a secure application for storing and managing user passwords. It provides RESTful APIs for user authentication, password management, and administrative tasks. The backend is under active development, with the latest changes functional locally but not fully reflected in this repository.
-Features
+# TRINITY Password Manager (Backend)
 
-User Authentication: Supports registration, login, and JWT-based authentication with refresh tokens.
-Password Management: Securely store, categorize, update, and delete passwords using AES encryption and BCrypt hashing.
-Admin Dashboard: Provides insights into user activity, password statistics, and category distribution.
-Secure Password Reset: Verification code-based password reset via email.
-Category Management: Admin features for creating, updating, and deleting password categories.
-Audit Logging: Tracks significant actions (e.g., user creation, password updates).
-CORS Support: Configured for secure frontend communication (http://localhost:5173).
+## Overview
 
-Technologies
+This is the backend repository for the Trinity Password Manager, a secure application designed for storing and managing user passwords. It provides robust RESTful APIs for user authentication, password management, and administrative tasks. While the backend is actively being developed with the latest changes fully functional locally, this repository may not yet reflect all the most recent updates.
 
-Java 17: Core programming language.
-Spring Boot 3.2.4: Framework for RESTful APIs.
-Spring Security: JWT and role-based access control (USER, ADMIN).
-PostgreSQL: Database for users, passwords, and categories.
-JPA/Hibernate: Database operations and entity management.
-BCrypt: Password hashing.
-AES: Password encryption.
-JavaMailSender: Email functionality for password resets.
-Lombok: Reduces boilerplate code.
-Maven: Dependency management and build tool.
-SLF4J: Logging framework.
+---
 
-Project Structure
+## Features
+
+* **User Authentication**: Supports user registration, secure login, and JWT-based authentication with refresh tokens for enhanced security.
+* **Password Management**: Securely store, categorize, update, and delete passwords using **AES encryption** for data at rest and **BCrypt hashing** for passwords.
+* **Admin Dashboard**: Gain insights into user activity, password statistics, and category distribution.
+* **Secure Password Reset**: Offers a verification code-based password reset mechanism via email.
+* **Category Management**: Administrators can create, update, and delete password categories.
+* **Audit Logging**: Tracks significant actions within the application, such as user creation and password updates.
+* **CORS Support**: Configured for secure communication with the frontend application (specifically `http://localhost:5173`).
+
+---
+
+## Technologies
+
+* **Java 17**: The core programming language.
+* **Spring Boot 3.2.4**: Framework for building robust RESTful APIs.
+* **Spring Security**: Handles JWT and role-based access control (USER, ADMIN).
+* **PostgreSQL**: The relational database for storing users, passwords, and categories.
+* **JPA/Hibernate**: For seamless database operations and entity management.
+* **BCrypt**: Used for secure password hashing.
+* **AES**: Employed for strong password encryption.
+* **JavaMailSender**: Facilitates email functionality for features like password resets.
+* **Lombok**: Reduces boilerplate code, making the codebase cleaner.
+* **Maven**: Manages project dependencies and handles the build process.
+* **SLF4J**: The logging framework used for application insights.
+
+---
+
+## Project Structure
 TRINITY/
 ├── src/main/java/com/project/Trinity/
-│   ├── Config/                # Security and exception handling configurations
-│   ├── Controller/            # REST controllers for auth, user, password, and admin
-│   ├── DTO/                   # Data Transfer Objects for API requests/responses
-│   ├── Entity/                # JPA entities (User, Password, Category, etc.)
-│   ├── Filter/                # JWT authentication and authorization filters
-│   ├── Repository/            # JPA repositories for database operations
-│   ├── Service/               # Business logic for user, password, and email services
-│   ├── Util/                  # JWT and AES encryption utilities
+
+│   ├── Config/                # Security and exception handling configurations
+
+│   ├── Controller/            # REST controllers for auth, user, password, and admin
+
+│   ├── DTO/                   # Data Transfer Objects for API requests/responses
+
+│   ├── Entity/                # JPA entities (User, Password, Category, etc.)
+
+│   ├── Filter/                # JWT authentication and authorization filters
+
+│   ├── Repository/            # JPA repositories for database operations
+
+│   ├── Service/               # Business logic for user, password, and email services
+
+│   ├── Util/                  # JWT and AES encryption utilities
+
 ├── src/main/resources/
-│   ├── application.properties # Database, JWT, and email configurations
-├── pom.xml                    # Maven dependencies and build configuration
+
+│   ├── application.properties # Database, JWT, and email configurations
+
+├── pom.xml                    # Maven dependencies and build configuration
+
 
 Setup Instructions
 
