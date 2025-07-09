@@ -1,5 +1,5 @@
 # TRINITY Password Manager (Backend)
-
+To see the latest developments: https://github.com/BeyzaNurKeskinn/Trinity-Password_Manager
 ## Overview
 
 This is the backend repository for the Trinity Password Manager, a secure application designed for storing and managing user passwords. It provides robust RESTful APIs for user authentication, password management, and administrative tasks. While the backend is actively being developed with the latest changes fully functional locally, this repository may not yet reflect all the most recent updates.
@@ -151,9 +151,7 @@ Test Endpoints:
 
 Development Status
 
-Functional locally with features like JWT authentication, AES encryption, and category management.
-Latest changes (e.g., enhanced password reset, audit logging) are not yet pushed to GitHub.
-This repository serves as a template for future projects.
+To see the latest developments: https://github.com/BeyzaNurKeskinn/Trinity-Password_Manager
 
 Future Improvements
 
